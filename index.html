@@ -284,12 +284,15 @@
             reader.readAsDataURL(file);
         });
 
-        // 云端接口封装
+        // 【重点修复】严格使用纯ASCII请求头，彻底消除ISO-8859-1报错
         async function getCloudList(){
             try{
                 const res = await fetch(DB_URL,{
                     method:"GET",
-                    headers:{"X-Master-Key":DB_KEY},
+                    headers:{
+                        "X-Master-Key": DB_KEY.trim(),
+                        "Content-Type":"application/json; charset=utf-8"
+                    },
                     signal: AbortSignal.timeout(10000)
                 });
                 if(!res.ok) throw new Error("接口返回异常");
@@ -305,8 +308,8 @@
                 const res = await fetch(DB_URL,{
                     method:"PUT",
                     headers:{
-                        "X-Master-Key":DB_KEY,
-                        "Content-Type":"application/json"
+                        "X-Master-Key": DB_KEY.trim(),
+                        "Content-Type":"application/json; charset=utf-8"
                     },
                     body: JSON.stringify({record: list}),
                     signal: AbortSignal.timeout(12000)
