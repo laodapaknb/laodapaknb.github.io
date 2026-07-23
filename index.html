@@ -284,43 +284,64 @@
             reader.readAsDataURL(file);
         });
 
-        // 【重点修复】严格使用纯ASCII请求头，彻底消除ISO-8859-1报错
+        // =========【核心修复：使用XMLHttpRequest替代fetch，彻底解决ISO编码报错】=========
         async function getCloudList(){
-            try{
-                const res = await fetch(DB_URL,{
-                    method:"GET",
-                    headers:{
-                        "X-Master-Key": DB_KEY.trim(),
-                        "Content-Type":"application/json; charset=utf-8"
-                    },
-                    signal: AbortSignal.timeout(10000)
-                });
-                if(!res.ok) throw new Error("接口返回异常");
-                const data = await res.json();
-                return data.record || [];
-            }catch(err){
-                showAlert("获取数据失败","网络异常或密钥/地址配置错误\n"+err.message);
-                return null;
-            }
+            return new Promise((resolve)=>{
+                const xhr = new XMLHttpRequest();
+                const cleanKey = DB_KEY.replace(/\s/g,"");
+                xhr.open("GET",DB_URL);
+                xhr.setRequestHeader("X-Master-Key", cleanKey);
+                xhr.setRequestHeader("Content-Type","application/json; charset=utf-8");
+                xhr.timeout = 10000;
+                xhr.onload = function(){
+                    try{
+                        const json = JSON.parse(xhr.responseText);
+                        resolve(json.record || []);
+                    }catch(err){
+                        showAlert("获取数据失败","接口返回异常\n"+err.message);
+                        resolve(null);
+                    }
+                };
+                xhr.onerror = function(){
+                    showAlert("获取数据失败","网络异常或密钥/地址配置错误");
+                    resolve(null);
+                };
+                xhr.ontimeout = function(){
+                    showAlert("获取数据失败","请求超时，请检查网络");
+                    resolve(null);
+                };
+                xhr.send();
+            });
         }
+
         async function saveCloudList(list){
-            try{
-                const res = await fetch(DB_URL,{
-                    method:"PUT",
-                    headers:{
-                        "X-Master-Key": DB_KEY.trim(),
-                        "Content-Type":"application/json; charset=utf-8"
-                    },
-                    body: JSON.stringify({record: list}),
-                    signal: AbortSignal.timeout(12000)
-                });
-                if(!res.ok) throw new Error("保存请求失败");
-                return true;
-            }catch(err){
-                showAlert("提交失败","云端保存超时！\n"+err.message);
-                return false;
-            }
+            return new Promise((resolve)=>{
+                const xhr = new XMLHttpRequest();
+                const cleanKey = DB_KEY.replace(/\s/g,"");
+                xhr.open("PUT",DB_URL);
+                xhr.setRequestHeader("X-Master-Key", cleanKey);
+                xhr.setRequestHeader("Content-Type","application/json; charset=utf-8");
+                xhr.timeout = 12000;
+                xhr.onload = function(){
+                    if(xhr.status >=200 && xhr.status <300){
+                        resolve(true);
+                    }else{
+                        showAlert("提交失败","云端返回错误码："+xhr.status);
+                        resolve(false);
+                    }
+                };
+                xhr.onerror = function(){
+                    showAlert("提交失败","网络连接异常！");
+                    resolve(false);
+                };
+                xhr.ontimeout = function(){
+                    showAlert("提交失败","上传超时，请稍后重试");
+                    resolve(false);
+                };
+                xhr.send(JSON.stringify({record: list}));
+            });
         }
+        // =========================================================================
 
         // 提交反馈【新增AI违规拦截】
         async function submitFeed(){
