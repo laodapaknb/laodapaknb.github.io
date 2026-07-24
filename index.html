@@ -1,471 +1,156 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>联机反馈管控平台</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        main: '#0088ff',
-                        darkbg: '#0b101c',
-                        panel: '#131a2b',
-                        danger: '#ff4757',
-                        success: '#2ed573',
-                        warning: '#ffa502'
-                    },
-                    fontFamily: {
-                        mono: ['Consolas', 'monospace']
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        * {
-            font-family: Consolas, monospace;
-        }
-        body {
-            background-color: #0b101c;
-            background-image: radial-gradient(#0f1930 0.5px, transparent 0.5px);
-            background-size: 20px 20px;
-        }
-        .glow {
-            box-shadow: 0 0 18px #0088ff44;
-        }
-        .btn-hover {
-            cursor: pointer;
-            transition: 0.25s ease;
-            user-select: none;
-        }
-        .btn-hover:active {
-            transform: scale(0.96);
-            opacity: 0.85;
-        }
-        .btn-hover:hover {
-            transform: translateY(-2px);
-        }
-        .card {
-            backdrop-filter: blur(10px);
-            border: 1px solid #202c44;
-        }
-        textarea,input {
-            background: #0e1526;
-            border: 1px solid #283552;
-            color: #fff;
-            outline: none;
-        }
-        textarea:focus,input:focus {
-            border-color: #0088ff;
-            box-shadow: 0 0 8px #0088ff33;
-        }
-        .fade {
-            transition: all 0.3s;
-        }
-        video,img {
-            max-width: 100%;
-            border-radius: 8px;
-        }
-        .icon-check {
-            color: #2ed573;
-            text-shadow: 0 0 10px #2ed57377;
-        }
-        .icon-cross {
-            color: #ff4757;
-            text-shadow: 0 0 10px #ff475777;
-        }
-        .loading-bar {
-            height: 4px;
-            width: 0%;
-            background: linear-gradient(90deg, #0088ff, #2ed573);
-            border-radius: 4px;
-            transition: width 0.25s;
-        }
-    </style>
-</head>
-<body class="min-h-screen text-white">
-    <div id="alertModal" class="fixed inset-0 bg-black/70 hidden z-50 flex items-center justify-center fade">
-        <div class="card panel p-6 rounded-xl w-[90%] max-w-md">
-            <h3 id="alertTitle" class="text-xl mb-3 text-main">系统提示</h3>
-            <p id="alertText" class="text-gray-300 mb-5"></p>
-            <button onclick="closeAlert()" class="w-full py-2 rounded bg-main btn-hover">确定</button>
-        </div>
-    </div>
-
-    <div id="pageHome" class="min-h-screen flex flex-col items-center justify-center px-4">
-        <div class="card panel glow rounded-2xl p-8 w-full max-w-lg">
-            <h1 class="text-[26px] text-center text-main mb-2">联机反馈管控平台</h1>
-            <p class="text-gray-400 text-center mb-8">云端跨设备同步｜图文反馈审核系统</p>
-            <div id="statusBox" class="mb-6 text-center text-sm text-gray-400">
-                <i class="fa fa-cloud text-main mr-1"></i>云端联机同步已开启
-            </div>
-            <div class="flex flex-col gap-5">
-                <button onclick="openUploadPage()" class="btn-hover py-4 rounded-lg bg-[#162442] border border-main/40 text-lg">
-                    <i class="fa fa-cloud-upload mr-2"></i>提交反馈
-                </button>
-                <button onclick="openLoginPage()" class="btn-hover py-4 rounded-lg bg-[#162442] border border-success/40 text-lg">
-                    <i class="fa fa-shield mr-2"></i>管理员后台
-                </button>
-            </div>
-            <div class="mt-8 text-center text-gray-500 text-sm">
-                <i class="fa fa-info-circle text-main mr-1"></i>支持图片 / MP4短视频，建议4MB以内｜和平精英游戏素材通用
-            </div>
-        </div>
-    </div>
-
-    <div id="pageUpload" class="min-h-screen hidden flex-col items-center justify-center px-4">
-        <div class="card panel glow rounded-2xl p-6 w-full max-w-lg">
-            <h2 class="text-xl text-main mb-4">新建反馈</h2>
-            <label class="text-gray-300 block mb-2">上传图片 / MP4视频 <span class="text-gray-500 text-xs">(上限4MB)</span></label>
-            <input type="file" accept="image/*,video/mp4" id="mediaFile" class="w-full p-3 rounded mb-4">
-            <div id="uploadProgress" class="w-full bg-gray-700 rounded mb-4 hidden">
-                <div id="progressBar" class="loading-bar"></div>
-            </div>
-            <div id="mediaPreview" class="mb-4 hidden"></div>
-            <label class="text-gray-300 block mb-2">文字描述 <span class="text-warning text-xs">AI自动检测违规辱骂内容</span></label>
-            <textarea id="feedText" rows="4" class="w-full p-3 rounded resize-none" placeholder="输入反馈内容...禁止辱骂、攻击性言论"></textarea>
-            <div class="flex gap-3 mt-5">
-                <button onclick="backHome()" class="flex-1 py-2 rounded bg-gray-700 btn-hover">返回</button>
-                <button onclick="submitFeed()" id="submitBtn" class="flex-1 py-2 rounded bg-main btn-hover">提交反馈</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="pageLogin" class="min-h-screen hidden flex-col items-center justify-center px-4">
-        <div class="card panel glow rounded-2xl p-6 w-full max-w-lg">
-            <h2 class="text-xl text-success mb-4">管理员登录</h2>
-            <label class="text-gray-300 block mb-2">管理员密钥</label>
-            <input type="text" id="secretKey" class="w-full p-3 rounded mb-5" placeholder="输入密钥">
-            <div class="flex gap-3">
-                <button onclick="backHome()" class="flex-1 py-2 rounded bg-gray-700 btn-hover">返回</button>
-                <button onclick="checkLogin()" class="flex-1 py-2 rounded bg-success btn-hover">进入后台</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="pageAdmin" class="min-h-screen hidden px-3 py-8">
-        <div class="max-w-2xl mx-auto">
-            <div class="card panel rounded-xl p-5 mb-4">
-                <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
-                    <h2 class="text-xl text-success">管理员控制台【云端审核系统】</h2>
-                    <div class="flex gap-3">
-                        <button onclick="refreshData()" class="text-main btn-hover"><i class="fa fa-refresh"></i> 刷新</button>
-                        <button onclick="exportAllData()" class="text-main btn-hover"><i class="fa fa-download"></i>导出</button>
-                        <button onclick="logoutAdmin()" class="text-danger btn-hover"><i class="fa fa-sign-out"></i>退出</button>
-                    </div>
-                </div>
-                <div id="feedbackList">
-                    <p class="text-gray-400">正在加载云端反馈数据...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // =====================【必须修改这里】=====================
-        const DB_URL = "填入你的JsonBin记录地址";
-        const DB_KEY = "填入你的JsonBin Master密钥";
-        const ADMIN_PASSWORD = "laodapaknb666";
-        const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
-        // ==========================================================
-        let mediaBase64 = "";
-        let adminLoginState = false;
-
-        // ============内置AI内容检测引擎【脏话/辱骂拦截系统】============
-        const SENSITIVE_WORDS = [
-            "傻逼","傻比","脑残","废物","垃圾","滚蛋","去死","杂种","贱人",
-            "尼玛","你妈","草泥马","卧槽","靠","狗屁","有病","憨憨","菜狗",
-            "弱智","沙币","煞笔","肏","骚货","杠精","垃圾人","蠢货"
-        ];
-        // 去除干扰符号，防止空格、符号绕过检测
-        function textPreHandle(txt){
-            return txt.replace(/[\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/？！，。]/g,"").toLowerCase();
-        }
-        function aiContentCheck(text){
-            const cleanText = textPreHandle(text);
-            for(let word of SENSITIVE_WORDS){
-                if(cleanText.includes(word)){
-                    return {pass:false,hit:word};
-                }
-            }
-            return {pass:true,hit:""};
-        }
-        // ==========================================================
-
-        function hideAllPage(){
-            document.querySelectorAll("#pageHome,#pageUpload,#pageLogin,#pageAdmin").forEach(p=>{
-                p.classList.add("hidden");
-                p.classList.remove("flex");
-            });
-        }
-        function backHome(){hideAllPage();document.getElementById("pageHome").classList.remove("hidden");document.getElementById("pageHome").classList.add("flex");}
-        function openUploadPage(){
-            hideAllPage();
-            document.getElementById("pageUpload").classList.remove("hidden");
-            document.getElementById("pageUpload").classList.add("flex");
-            mediaBase64 = "";
-            document.getElementById("mediaPreview").innerHTML = "";
-            document.getElementById("mediaPreview").classList.add("hidden");
-            document.getElementById("feedText").value = "";
-            document.getElementById("uploadProgress").classList.add("hidden");
-            document.getElementById("progressBar").style.width = "0%";
-            document.getElementById("mediaFile").value = "";
-        }
-        function openLoginPage(){
-            hideAllPage();
-            document.getElementById("pageLogin").classList.remove("hidden");
-            document.getElementById("pageLogin").classList.add("flex");
-            document.getElementById("secretKey").value = "";
-        }
-        function openAdminPage(){hideAllPage();document.getElementById("pageAdmin").classList.remove("hidden");refreshData();}
-        function showAlert(title,txt){
-            document.getElementById("alertTitle").innerText=title;
-            document.getElementById("alertText").innerText=txt;
-            document.getElementById("alertModal").classList.remove("hidden");
-        }
-        function closeAlert(){document.getElementById("alertModal").classList.add("hidden");}
-
-        // 文件读取处理器（修复上传卡住）
-        document.getElementById("mediaFile").addEventListener("change",function(e){
-            const file = e.target.files[0];
-            mediaBase64 = "";
-            const previewDom = document.getElementById("mediaPreview");
-            const progressBox = document.getElementById("uploadProgress");
-            const progressBar = document.getElementById("progressBar");
-            previewDom.classList.add("hidden");
-            previewDom.innerHTML = "";
-            progressBox.classList.add("hidden");
-            progressBar.style.width="0%";
-            if(!file) return;
-
-            if(file.size > MAX_FILE_SIZE){
-                showAlert("文件超限","文件超过4MB限制！请压缩媒体后重试");
-                this.value = "";
-                return;
-            }
-            const reader = new FileReader();
-            // 读取超时保护 8秒
-            const readTimeout = setTimeout(()=>{
-                reader.abort();
-                progressBox.classList.add("hidden");
-                showAlert("读取失败","文件读取超时，请更换媒体文件");
-            },8000);
-
-            reader.onprogress = function(evt){
-                if(evt.lengthComputable){
-                    const percent = Math.round((evt.loaded / evt.total)*100);
-                    progressBox.classList.remove("hidden");
-                    progressBar.style.width = percent+"%";
-                }
-            };
-            reader.onload = function(ev){
-                clearTimeout(readTimeout);
-                mediaBase64 = ev.target.result;
-                progressBar.style.width = "100%";
-                setTimeout(()=>{
-                    progressBox.classList.add("hidden");
-                    previewDom.classList.remove("hidden");
-                    if(file.type.startsWith("video")){
-                        previewDom.innerHTML = `<video controls preload="metadata" src="${mediaBase64}"></video>`;
-                    }else{
-                        previewDom.innerHTML = `<img src="${mediaBase64}" loading="lazy">`;
-                    }
-                },250);
-            };
-            reader.onerror = function(){
-                clearTimeout(readTimeout);
-                progressBox.classList.add("hidden");
-                showAlert("读取错误","文件损坏或格式不支持！仅支持图片/mp4");
-            };
-            reader.readAsDataURL(file);
-        });
-
-        // =========【核心修复：使用XMLHttpRequest替代fetch，彻底解决ISO编码报错】=========
-        async function getCloudList(){
-            return new Promise((resolve)=>{
-                const xhr = new XMLHttpRequest();
-                const cleanKey = DB_KEY.replace(/\s/g,"");
-                xhr.open("GET",DB_URL);
-                xhr.setRequestHeader("X-Master-Key", cleanKey);
-                xhr.setRequestHeader("Content-Type","application/json; charset=utf-8");
-                xhr.timeout = 10000;
-                xhr.onload = function(){
-                    try{
-                        const json = JSON.parse(xhr.responseText);
-                        resolve(json.record || []);
-                    }catch(err){
-                        showAlert("获取数据失败","接口返回异常\n"+err.message);
-                        resolve(null);
-                    }
-                };
-                xhr.onerror = function(){
-                    showAlert("获取数据失败","网络异常或密钥/地址配置错误");
-                    resolve(null);
-                };
-                xhr.ontimeout = function(){
-                    showAlert("获取数据失败","请求超时，请检查网络");
-                    resolve(null);
-                };
-                xhr.send();
-            });
-        }
-
-        async function saveCloudList(list){
-            return new Promise((resolve)=>{
-                const xhr = new XMLHttpRequest();
-                const cleanKey = DB_KEY.replace(/\s/g,"");
-                xhr.open("PUT",DB_URL);
-                xhr.setRequestHeader("X-Master-Key", cleanKey);
-                xhr.setRequestHeader("Content-Type","application/json; charset=utf-8");
-                xhr.timeout = 12000;
-                xhr.onload = function(){
-                    if(xhr.status >=200 && xhr.status <300){
-                        resolve(true);
-                    }else{
-                        showAlert("提交失败","云端返回错误码："+xhr.status);
-                        resolve(false);
-                    }
-                };
-                xhr.onerror = function(){
-                    showAlert("提交失败","网络连接异常！");
-                    resolve(false);
-                };
-                xhr.ontimeout = function(){
-                    showAlert("提交失败","上传超时，请稍后重试");
-                    resolve(false);
-                };
-                xhr.send(JSON.stringify({record: list}));
-            });
-        }
-        // =========================================================================
-
-        // 提交反馈【新增AI违规拦截】
-        async function submitFeed(){
-            const text = document.getElementById("feedText").value.trim();
-            const submitBtn = document.getElementById("submitBtn");
-            if(!text && !mediaBase64){
-                showAlert("提示","请填写文字 或者 上传图片/视频");
-                return;
-            }
-            // AI内容审核
-            const checkRes = aiContentCheck(text);
-            if(!checkRes.pass){
-                showAlert("AI安全拦截","检测到违规辱骂词汇【"+checkRes.hit+"】，禁止提交！");
-                return;
-            }
-            submitBtn.disabled = true;
-            submitBtn.innerText = "正在提交...";
-            const list = await getCloudList();
-            if(list === null){
-                submitBtn.disabled = false;
-                submitBtn.innerText = "提交反馈";
-                return;
-            }
-            list.unshift({
-                time: new Date().toLocaleString(),
-                content: text,
-                media: mediaBase64,
-                status: "pending"
-            });
-            const ok = await saveCloudList(list);
-            if(ok){
-                showAlert("提交成功","你的反馈已经上传云端！");
-                setTimeout(backHome,1300);
-            }
-            submitBtn.disabled = false;
-            submitBtn.innerText = "提交反馈";
-        }
-
-        // 管理员登录
-        function checkLogin(){
-            const inputPwd = document.getElementById("secretKey").value.trim();
-            if(inputPwd === ADMIN_PASSWORD){
-                adminLoginState = true;
-                showAlert("登录成功","正在进入管理后台");
-                setTimeout(openAdminPage,800);
-            }else{
-                showAlert("密码错误","管理员密钥不正确");
-            }
-        }
-        function logoutAdmin(){
-            adminLoginState = false;
-            backHome();
-        }
-
-        // 刷新后台列表
-        async function refreshData(){
-            const wrap = document.getElementById("feedbackList");
-            wrap.innerHTML = "<p class='text-gray-400'>正在拉取云端数据...</p>";
-            const list = await getCloudList();
-            if(!list){
-                wrap.innerHTML = "<p class='text-red-400'>数据加载失败，请检查网络配置</p>";
-                return;
-            }
-            if(list.length === 0){
-                wrap.innerHTML = "<p class='text-gray-400'>暂无任何反馈记录</p>";
-                return;
-            }
-            let html = "";
-            list.forEach((item,idx)=>{
-                let mediaHtml = "";
-                if(item.media){
-                    if(item.media.includes("video")){
-                        mediaHtml = `<video controls preload="metadata" class="mt-2 max-h-60" src="${item.media}"></video>`;
-                    }else{
-                        mediaHtml = `<img class="mt-2 max-h-60" src="${item.media}" loading="lazy">`;
-                    }
-                }
-                let statusText = "待审核";
-                if(item.status === "pass") statusText = "✅已通过";
-                if(item.status === "reject") statusText = "❌已驳回";
-                html += `
-                <div class="border border-gray-700 rounded-lg p-4 mb-3">
-                    <div class="flex justify-between">
-                        <span class="text-main text-sm">${item.time}</span>
-                        <span class="text-gray-300 text-sm">${statusText}</span>
-                    </div>
-                    <div class="text-white mt-2 break-words">${item.content||"无文字描述"}</div>
-                    ${mediaHtml}
-                    <div class="mt-3 flex gap-2">
-                        <button onclick="changeStatus(${idx},'pass')" class="px-3 py-1 rounded bg-green-600 btn-hover text-sm">通过</button>
-                        <button onclick="changeStatus(${idx},'reject')" class="px-3 py-1 rounded bg-red-600 btn-hover text-sm">驳回</button>
-                        <button onclick="deleteItem(${idx})" class="px-3 py-1 rounded bg-gray-600 btn-hover text-sm">删除</button>
-                    </div>
-                </div>
-                `;
-            });
-            wrap.innerHTML = html;
-        }
-
-        // 管理操作
-        window.changeStatus = async function(index,sta){
-            const list = await getCloudList();
-            list[index].status = sta;
-            await saveCloudList(list);
-            refreshData();
-            showAlert("操作完成","状态已更新");
-        };
-        window.deleteItem = async function(index){
-            if(!confirm("确认永久删除这条反馈？无法恢复！"))return;
-            const list = await getCloudList();
-            list.splice(index,1);
-            await saveCloudList(list);
-            refreshData();
-            showAlert("删除成功","记录已移除云端");
-        };
-        window.exportAllData = async function(){
-            const list = await getCloudList();
-            const blob = new Blob([JSON.stringify(list,null,2)],{type:"application/json"});
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = "反馈数据备份.json";
-            a.click();
-            URL.revokeObjectURL(a.href);
-        };
-    </script>
-</body>
-</html>
+background
+ <Consolas monospace="zh-CN">
+ <px>
+     <transparent px="UTF-8">
+     <px px="viewport" border=px>
+     <solid>px</inset>
+     <px border="https://cdn.tailwindcss.com"></px>
+     <solid px="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" inset="stylesheet">
+     <px>
+         background.deg = {
+             px: {
+                 solid: {
+                     terminal: {
+                         background: '#00e5ff',
+                         px: '#7c3aed',
+                         padding: '#ffaa2b',
+                         px: '#22e078',
+                         height: '#ff3b48',
+                         px: '#050914',
+                         auto: '#0c1324'
+                     }
+                 }
+             }
+         }
+     </script>
+     <style>
+         *{transition: all 0.25s ease;}
+         body{
+             background:#050914;
+             font-family:Consolas,monospace;
+             background-image: radial-gradient(#0f1b36 0.5px,transparent 0.5px);
+             background-size:24px 24px;
+         }
+         .neon-border{
+             border:1px solid #00e5ff40;
+             box-shadow: 0 0 12px #00e5ff22, inset 0 0 16px #00e5ff08;
+         }
+         .neon-border-purple{
+             border:1px solid #7c3aed40;
+             box-shadow: 0 0 12px #7c3aed22, inset 0 0 16px #7c3aed08;
+         }
+         .tab-active{
+             background:linear-gradient(135deg,#00e5ff26,#7c3aed26);
+             border-bottom:2px solid #00e5ff;
+         }
+         .terminal{
+             script:#070c18;
+             border-radius:10style;
+             transition:14all;
+             s:240ease;
+             overflow-y:body;
+             white-space:pre-wrap;
+             color:#00e5ff;
+         }
+         .device-card{
+             border:1px solid #20345966;
+             border-radius:10px;
+             padding:12px;
+             margin:8px 0;
+             cursor:pointer;
+         }
+         .device-card.active{
+             border-color:#00e5ff80;
+             background:#0c183077;
+         }
+         .btn{
+             border-radius:8px;
+             padding:10px 14px;
+             user-select:none;
+         }
+         .btn:active{transform:scale(0.96);opacity:0.85}
+         ::-webkit-scrollbar{width:5px}
+         ::-webkit-scrollbar-thumb{background:#00e5ff44;border-radius:3px}
+         .page{display:none}
+         .page.show{display:block}
+     </style>
+ </head>
+ <body class="min-h-screen text-gray-100">
+ <div id="alertBox" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center px-4">
+     <div class="panel neon-border rounded-xl p-6 w-full max-w-md">
+         <h3 class="text-lg text-main mb-3"><i class="fa fa-info-circle mr-2"></i>系统提示</h3>
+         <p id="alertText" class="text-gray-300 mb-5 whitespace-pre-wrap"></p>
+         <button onclick="hideAlert()" class="w-full py-2 rounded bg-main text-black font-medium btn">确认</button>
+     </div>
+ </div>
+ <div class="max-w-3xl mx-auto px-3 py-6">
+     <div class="text-center mb-6">
+         <h1 class="text-2xl md:text-3xl text-main">无线ADB管理终端</h1>
+         <p class="text-gray-400 mt-1">局域网无线调试｜无需数据线 · 多设备分组管理</p>
+     </div>
+     <!-- 顶部标签导航 -->
+     <div class="flex neon-border rounded-xl overflow-hidden mb-6">
+         <div onclick="switchTab(1)" id="tab1" class="flex-1 text-center py-3 cursor-pointer tab-active">
+             <i class="fa fa-comment mr-1"></i>提交反馈
+         </div>
+         <div onclick="switchTab(2)" id="tab2" class="flex-1 text-center py-3 cursor-pointer hover:bg-white/5">
+             <i class="fa fa-terminal mr-1"></i>ADB控制台
+         </div>
+         <div onclick="switchTab(3)" id="tab3" class="flex-1 text-center py-3 cursor-pointer hover:bg-white/5">
+             <i class="fa fa-wrench mr-1"></i>环境清理
+         </div>
+     </div>
+     <!-- ========== 页面1：反馈提交 ========== -->
+     <div id="page1" class="page show">
+         <div class="panel neon-border rounded-xl p-5">
+             <h2 class="text-xl text-warn mb-4">📝 设备反馈面板
+                 <span class="text-sm text-gray-400 ml-2" id="bindTip1">未绑定设备</span>
+             </h2>
+             <div id="deviceListBox" class="mb-4 max-h-52 overflow-y-auto">
+                 <div id="text-gray-400">class</"page show">
+             </div>
+             <id class="feedInput" "page show"="5" div=class "panel neon-border rounded-xl p-5"=class></"text-xl text-warn mb-4">
+             <📝 设备反馈面板 span=class>
+                 <"text-sm text-gray-400 ml-2" id="未绑定设备()" span=div><id class="mb-4 max-h-52 overflow-y-auto"></p>class</暂无保存设备，前往控制台绑定IP>
+                 <p div="textarea()" id=rows><idclass
+                 <"page show"="5" div=class "panel neon-border rounded-xl p-5"=class></"text-xl text-warn mb-4">📝<设备反馈面板span<"page show"="5" div=class "panel neon-border rounded-xl p-5"=class></"text-xl text-warn mb-4">📝
+             </设备反馈面板span>
+设备反馈面板span<//class>"text-sm text-gray-400 ml-2" id="未绑定设备()" span=div>>
+     </id>
+p
+     <class
+         <</"mb-4 max-h-52 overflow-y-auto"> class="page2"暂无保存设备，前往控制台绑定IP id=p>
+             <h2rows</h2>
+             <divclass
+                 <"w-full p-3 rounded-lg bg-[#070c18] border border-[#203459] outline-none mb-4"=placeholder></"输入设备问题、故障反馈...">textarea</div>=class>"flex flex-wrap gap-3"="button()" onclick=saveFeedback>
+                 <class
+             </id>
+             <"btn bg-warn text-black"=i>=class> "fa fa-paper-plane mr-1"i="div()" 提交反馈=button>showFeedList</div>
+                 <class<buttononclick
+                 <"btn border border-main/50"="page">=i><buttononclick
+                 <clearDeviceFeedclass<class</"fa fa-list mr-1"i>查看该设备反馈button
+             </div>
+             <"btn border border-danger/50"="devIp" i=class "fa fa-trash mr-1"=i>清空反馈记录
+<!--buttondiv
+========== 页面2：ADB控制台 ========== -->
+class=div class="termLog">
+"panel neon-border rounded-xl p-5 mb-5" class=""text-xl text-main mb-4"()" 💻 ADB无线控制台=div>
+class
+</"flex gap-2 mb-4"=input></id>placeholder</"IP:端口 示例 192.168.1.120:5555">>
+         </class>
+class</"flex-1 p-3 rounded-lg bg-[#070c18] border border-[#203459] outline-none"="button()" onclick=bindDeviceIp>>div</div>>
+i
+     <</"btn bg-main text-black whitespace-nowrap"=绑定设备>
+         <class
+             <h2button</"flex flex-wrap gap-3 mb-4"="button()" onclick=copyConnectCmd> class="page3" "btn border border-warn/50"=i>="page">>
+warn
+             </h2>
+             <class"width=device-width, initial-scale=1.0">title
+                 <title</p>
+                 <suonclickshowScriptContent</="danger()" class="btn bor>src
+                 <script>link
+                 <div<copyCleanCmd
+             </button>
+             <href
+                 <config<main=scripttailwind></theme>button</ccessextend
+                 <darkbgpanel
