@@ -1,23 +1,23 @@
-background
- <Consolas monospace="zh-CN">
- <px>
-     <transparent px="UTF-8">
-     <px px="viewport" border=px>
-     <solid>px</inset>
-     <px border="https://cdn.tailwindcss.com"></px>
-     <solid px="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" inset="stylesheet">
-     <px>
-         background.deg = {
-             px: {
-                 solid: {
-                     terminal: {
-                         background: '#00e5ff',
-                         px: '#7c3aed',
-                         padding: '#ffaa2b',
-                         px: '#22e078',
-                         height: '#ff3b48',
-                         px: '#050914',
-                         auto: '#0c1324'
+<!DOCTYPE html>
+ <html lang="zh-CN">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>无线ADB管理终端｜多设备平台</title>
+     <script src="https://cdn.tailwindcss.com"></script>
+     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+     <script>
+         tailwind.config = {
+             theme: {
+                 extend: {
+                     colors: {
+                         main: '#00e5ff',
+                         second: '#7c3aed',
+                         warn: '#ffaa2b',
+                         success: '#22e078',
+                         danger: '#ff3b48',
+                         darkbg: '#050914',
+                         panel: '#0c1324'
                      }
                  }
              }
@@ -44,11 +44,11 @@ background
              border-bottom:2px solid #00e5ff;
          }
          .terminal{
-             script:#070c18;
-             border-radius:10style;
-             transition:14all;
-             s:240ease;
-             overflow-y:body;
+             background:#070c18;
+             border-radius:10px;
+             padding:14px;
+             height:240px;
+             overflow-y:auto;
              white-space:pre-wrap;
              color:#00e5ff;
          }
@@ -91,13 +91,13 @@ background
      <!-- 顶部标签导航 -->
      <div class="flex neon-border rounded-xl overflow-hidden mb-6">
          <div onclick="switchTab(1)" id="tab1" class="flex-1 text-center py-3 cursor-pointer tab-active">
-             <i class="fa fa-comment mr-1"></i>提交反馈
+             <i class="fa fa-comment mr-1"></i> 提交反馈
          </div>
          <div onclick="switchTab(2)" id="tab2" class="flex-1 text-center py-3 cursor-pointer hover:bg-white/5">
-             <i class="fa fa-terminal mr-1"></i>ADB控制台
+             <i class="fa fa-terminal mr-1"></i> ADB控制台
          </div>
          <div onclick="switchTab(3)" id="tab3" class="flex-1 text-center py-3 cursor-pointer hover:bg-white/5">
-             <i class="fa fa-wrench mr-1"></i>环境清理
+             <i class="fa fa-wrench mr-1"></i> 环境清理
          </div>
      </div>
      <!-- ========== 页面1：反馈提交 ========== -->
@@ -107,50 +107,50 @@ background
                  <span class="text-sm text-gray-400 ml-2" id="bindTip1">未绑定设备</span>
              </h2>
              <div id="deviceListBox" class="mb-4 max-h-52 overflow-y-auto">
-                 <div id="text-gray-400">class</"page show">
+                 <p class="text-gray-400">暂无保存设备，前往控制台绑定IP</p>
              </div>
-             <id class="feedInput" "page show"="5" div=class "panel neon-border rounded-xl p-5"=class></"text-xl text-warn mb-4">
-             <📝 设备反馈面板 span=class>
-                 <"text-sm text-gray-400 ml-2" id="未绑定设备()" span=div><id class="mb-4 max-h-52 overflow-y-auto"></p>class</暂无保存设备，前往控制台绑定IP>
-                 <p div="textarea()" id=rows><idclass
-                 <"page show"="5" div=class "panel neon-border rounded-xl p-5"=class></"text-xl text-warn mb-4">📝<设备反馈面板span<"page show"="5" div=class "panel neon-border rounded-xl p-5"=class></"text-xl text-warn mb-4">📝
-             </设备反馈面板span>
-设备反馈面板span<//class>"text-sm text-gray-400 ml-2" id="未绑定设备()" span=div>>
-     </id>
-p
-     <class
-         <</"mb-4 max-h-52 overflow-y-auto"> class="page2"暂无保存设备，前往控制台绑定IP id=p>
-             <h2rows</h2>
-             <divclass
-                 <"w-full p-3 rounded-lg bg-[#070c18] border border-[#203459] outline-none mb-4"=placeholder></"输入设备问题、故障反馈...">textarea</div>=class>"flex flex-wrap gap-3"="button()" onclick=saveFeedback>
-                 <class
-             </id>
-             <"btn bg-warn text-black"=i>=class> "fa fa-paper-plane mr-1"i="div()" 提交反馈=button>showFeedList</div>
-                 <class<buttononclick
-                 <"btn border border-main/50"="page">=i><buttononclick
-                 <clearDeviceFeedclass<class</"fa fa-list mr-1"i>查看该设备反馈button
+             <textarea id="feedInput" rows="5" class="w-full p-3 rounded-lg bg-[#070c18] border border-[#203459] outline-none mb-4" placeholder="输入设备问题、故障反馈..."></textarea>
+             <div class="flex flex-wrap gap-3">
+                 <button onclick="saveFeedback()" class="btn bg-warn text-black"><i class="fa fa-paper-plane mr-1"></i>提交反馈</button>
+                 <button onclick="showFeedList()" class="btn border border-main/50"><i class="fa fa-list mr-1"></i>查看该设备反馈</button>
+                 <button onclick="clearDeviceFeed()" class="btn border border-danger/50"><i class="fa fa-trash mr-1"></i>清空反馈记录</button>
              </div>
-             <"btn border border-danger/50"="devIp" i=class "fa fa-trash mr-1"=i>清空反馈记录
-<!--buttondiv
-========== 页面2：ADB控制台 ========== -->
-class=div class="termLog">
-"panel neon-border rounded-xl p-5 mb-5" class=""text-xl text-main mb-4"()" 💻 ADB无线控制台=div>
-class
-</"flex gap-2 mb-4"=input></id>placeholder</"IP:端口 示例 192.168.1.120:5555">>
-         </class>
-class</"flex-1 p-3 rounded-lg bg-[#070c18] border border-[#203459] outline-none"="button()" onclick=bindDeviceIp>>div</div>>
-i
-     <</"btn bg-main text-black whitespace-nowrap"=绑定设备>
-         <class
-             <h2button</"flex flex-wrap gap-3 mb-4"="button()" onclick=copyConnectCmd> class="page3" "btn border border-warn/50"=i>="page">>
-warn
+         </div>
+     </div>
+     <!-- ========== 页面2：ADB控制台 ========== -->
+     <div id="page2" class="page">
+         <div class="panel neon-border rounded-xl p-5 mb-5">
+             <h2 class="text-xl text-main mb-4">💻 ADB无线控制台</h2>
+             <div class="flex gap-2 mb-4">
+                 <input id="devIp" placeholder="IP:端口 示例 192.168.1.120:5555" class="flex-1 p-3 rounded-lg bg-[#070c18] border border-[#203459] outline-none">
+                 <button onclick="bindDeviceIp()" class="btn bg-main text-black whitespace-nowrap">绑定设备</button>
+             </div>
+             <div class="flex flex-wrap gap-3 mb-4">
+                 <button onclick="copyConnectCmd()" class="btn border border-warn/50"><i class="fa fa-link"></i> 复制连接命令</button>
+                 <button onclick="refreshDeviceList()" class="btn border border-second/50"><i class="fa fa-mobile"></i> 刷新设备列表</button>
+                 <button onclick="clearTerm()" class="btn border border-gray-500"><i class="fa fa-trash"></i>清空终端</button>
+             </div>
+             <div class="terminal neon-border" id="termLog">
+ [系统] 欢迎使用无线ADB终端
+ [操作指南]
+ 1.手机开启开发者选项 → 无线调试
+ 2.填入局域网IP与端口
+ 3.复制adb命令至终端执行
+             </div>
+         </div>
+     </div>
+     <!-- ========== 页面3：环境清理 ========== -->
+     <div id="page3" class="page">
+         <div class="panel neon-border-purple rounded-xl p-5">
+             <h2 class="text-xl text-second mb-4">🧹 和平精英环境净化工具
+                 <span class="text-sm text-gray-400 ml-2" id="bindTip3">未绑定设备</span>
              </h2>
-             <class"width=device-width, initial-scale=1.0">title
-                 <title</p>
-                 <suonclickshowScriptContent</="danger()" class="btn bor>src
-                 <script>link
-                 <div<copyCleanCmd
-             </button>
-             <href
-                 <config<main=scripttailwind></theme>button</ccessextend
-                 <darkbgpanel
+             <div class="mb-5 text-gray-300 text-sm">
+                 <p>✅ 修改设备标识ID</p>
+                 <p>✅ 清理游戏风控缓存与追踪文件</p>
+                 <p>✅ 模拟注入防人脸风险模块</p>
+                 <p>✅ 执行完成自动启动游戏</p>
+             </div>
+             <div class="flex flex-wrap gap-3">
+                 <button onclick="copyCleanCmd()" class="btn bg-second"><i class="fa fa-play-circle mr-1"></i>复制净化执行命令</button>
+                 <button onclick="showScriptContent()" class="btn bor
