@@ -1,157 +1,109 @@
 <!DOCTYPE html>
- <html lang="zh-CN">
- <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <title>无线ADB管理终端｜多设备平台</title>
-     <script src="https://cdn.tailwindcss.com"></script>
-     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-     <script>
-         tailwind.config = {
-             theme: {
-                 extend: {
-                     colors: {
-                         main: '#00e5ff',
-                         second: '#7c3aed',
-                         warn: '#ffaa2b',
-                         success: '#22e078',
-                         danger: '#ff3b48',
-                         darkbg: '#050914',
-                         panel: '#0c1324'
-                     }
-                 }
-             }
-         }
-     </script>
-     <style>
-         *{transition: all 0.25s ease;}
-         body{
-             background:#050914;
-             font-family:Consolas,monospace;
-             background-image: radial-gradient(#0f1b36 0.5px,transparent 0.5px);
-             background-size:24px 24px;
-         }
-         .neon-border{
-             border:1px solid #00e5ff40;
-             box-shadow: 0 0 12px #00e5ff22, inset 0 0 16px #00e5ff08;
-         }
-         .neon-border-purple{
-             border:1px solid #7c3aed40;
-             box-shadow: 0 0 12px #7c3aed22, inset 0 0 16px #7c3aed08;
-         }
-         .tab-active{
-             background:linear-gradient(135deg,#00e5ff26,#7c3aed26);
-             border-bottom:2px solid #00e5ff;
-         }
-         .terminal{
-             background:#070c18;
-             border-radius:10px;
-             padding:14px;
-             height:240px;
-             overflow-y:auto;
-             white-space:pre-wrap;
-             color:#00e5ff;
-         }
-         .device-card{
-             border:1px solid #20345966;
-             border-radius:10px;
-             padding:12px;
-             margin:8px 0;
-             cursor:pointer;
-         }
-         .device-card.active{
-             border-color:#00e5ff80;
-             background:#0c183077;
-         }
-         .btn{
-             border-radius:8px;
-             padding:10px 14px;
-             user-select:none;
-         }
-         .btn:active{transform:scale(0.96);opacity:0.85}
-         ::-webkit-scrollbar{width:5px}
-         ::-webkit-scrollbar-thumb{background:#00e5ff44;border-radius:3px}
-         .page{display:none}
-         .page.show{display:block}
-     </style>
- </head>
- <body class="min-h-screen text-gray-100">
- <div id="alertBox" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center px-4">
-     <div class="panel neon-border rounded-xl p-6 w-full max-w-md">
-         <h3 class="text-lg text-main mb-3"><i class="fa fa-info-circle mr-2"></i>系统提示</h3>
-         <p id="alertText" class="text-gray-300 mb-5 whitespace-pre-wrap"></p>
-         <button onclick="hideAlert()" class="w-full py-2 rounded bg-main text-black font-medium btn">确认</button>
-     </div>
- </div>
- <div class="max-w-3xl mx-auto px-3 py-6">
-     <div class="text-center mb-6">
-         <h1 class="text-2xl md:text-3xl text-main">无线ADB管理终端</h1>
-         <p class="text-gray-400 mt-1">局域网无线调试｜无需数据线 · 多设备分组管理</p>
-     </div>
-     <!-- 顶部标签导航 -->
-     <div class="flex neon-border rounded-xl overflow-hidden mb-6">
-         <div onclick="switchTab(1)" id="tab1" class="flex-1 text-center py-3 cursor-pointer tab-active">
-             <i class="fa fa-comment mr-1"></i> 提交反馈
-         </div>
-         <div onclick="switchTab(2)" id="tab2" class="flex-1 text-center py-3 cursor-pointer hover:bg-white/5">
-             <i class="fa fa-terminal mr-1"></i> ADB控制台
-         </div>
-         <div onclick="switchTab(3)" id="tab3" class="flex-1 text-center py-3 cursor-pointer hover:bg-white/5">
-             <i class="fa fa-wrench mr-1"></i> 环境清理
-         </div>
-     </div>
-     <!-- ========== 页面1：反馈提交 ========== -->
-     <div id="page1" class="page show">
-         <div class="panel neon-border rounded-xl p-5">
-             <h2 class="text-xl text-warn mb-4">📝 设备反馈面板
-                 <span class="text-sm text-gray-400 ml-2" id="bindTip1">未绑定设备</span>
-             </h2>
-             <div id="deviceListBox" class="mb-4 max-h-52 overflow-y-auto">
-                 <p class="text-gray-400">暂无保存设备，前往控制台绑定IP</p>
-             </div>
-             <textarea id="feedInput" rows="5" class="w-full p-3 rounded-lg bg-[#070c18] border border-[#203459] outline-none mb-4" placeholder="输入设备问题、故障反馈..."></textarea>
-             <div class="flex flex-wrap gap-3">
-                 <button onclick="saveFeedback()" class="btn bg-warn text-black"><i class="fa fa-paper-plane mr-1"></i>提交反馈</button>
-                 <button onclick="showFeedList()" class="btn border border-main/50"><i class="fa fa-list mr-1"></i>查看该设备反馈</button>
-                 <button onclick="clearDeviceFeed()" class="btn border border-danger/50"><i class="fa fa-trash mr-1"></i>清空反馈记录</button>
-             </div>
-         </div>
-     </div>
-     <!-- ========== 页面2：ADB控制台 ========== -->
-     <div id="page2" class="page">
-         <div class="panel neon-border rounded-xl p-5 mb-5">
-             <h2 class="text-xl text-main mb-4">💻 ADB无线控制台</h2>
-             <div class="flex gap-2 mb-4">
-                 <input id="devIp" placeholder="IP:端口 示例 192.168.1.120:5555" class="flex-1 p-3 rounded-lg bg-[#070c18] border border-[#203459] outline-none">
-                 <button onclick="bindDeviceIp()" class="btn bg-main text-black whitespace-nowrap">绑定设备</button>
-             </div>
-             <div class="flex flex-wrap gap-3 mb-4">
-                 <button onclick="copyConnectCmd()" class="btn border border-warn/50"><i class="fa fa-link"></i> 复制连接命令</button>
-                 <button onclick="refreshDeviceList()" class="btn border border-second/50"><i class="fa fa-mobile"></i> 刷新设备列表</button>
-                 <button onclick="clearTerm()" class="btn border border-gray-500"><i class="fa fa-trash"></i>清空终端</button>
-             </div>
-             <div class="terminal neon-border" id="termLog">
- [系统] 欢迎使用无线ADB终端
- [操作指南]
- 1.手机开启开发者选项 → 无线调试
- 2.填入局域网IP与端口
- 3.复制adb命令至终端执行
-             </div>
-         </div>
-     </div>
-     <!-- ========== 页面3：环境清理 ========== -->
-     <div id="page3" class="page">
-         <div class="panel neon-border-purple rounded-xl p-5">
-             <h2 class="text-xl text-second mb-4">🧹 和平精英环境净化工具
-                 <span class="text-sm text-gray-400 ml-2" id="bindTip3">未绑定设备</span>
-             </h2>
-             <div class="mb-5 text-gray-300 text-sm">
-                 <p>✅ 四轮AndroidID轮换修改</p>
-                 <p>✅ 全域扫描风控/追踪/黑名单文件</p>
-                 <p>✅ UE4深层目录安全清理</p>
-                 <p>✅ 模拟注入防人脸风控模块（240行输出）</p>
-                 <p>✅ 清理系统日历追踪标记</p>
-                 <p>✅ 执行结束自动启动游戏</p>
-             </div>
-             <div class="flex flex-wrap gap-3">
-                 <button onclick="copyCleanCmd()" class="btn bg-second"><i class="fa fa-play-circle mr-1"
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>失眠拦截 · 官方站点</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        skyglass: '#bae4fc',
+                        primary: '#38bdf8',
+                    },
+                    fontFamily: {
+                        sans: ['Inter','system-ui','sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass {
+                background: rgba(255,255,255,0.35);
+                backdrop-filter: blur(16px) saturate(180%);
+                border: 1px solid rgba(255,255,255,0.55);
+                box-shadow: 0 8px 30px rgba(56,189,248,0.18);
+            }
+            .island-transition {
+                transition: all 0.5s cubic-bezier(0.19,1,0.22,1);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+            .card-hover:hover {
+                transform: translateY(-6px);
+                box-shadow: 0 14px 35px rgba(56,189,248,0.22);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-sky-50 via-blue-100 to-indigo-50 flex flex-col items-center py-10 px-4">
+
+    <!-- 顶部浅蓝色灵动岛 -->
+    <div class="relative mt-2 mb-16">
+        <div id="island" class="island-transition glass w-[130px] h-[40px] rounded-[24px] flex items-center justify-center overflow-hidden cursor-pointer group">
+            <span class="island-transition whitespace-nowrap text-primary font-medium text-sm group-hover:opacity-0">失眠拦截</span>
+            <div class="island-transition absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center px-5">
+                <p class="text-primary text-sm">官方导航 · 安全稳定</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主标题 -->
+    <div class="text-center mb-14">
+        <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold text-sky-800 tracking-wide">失眠拦截工具</h1>
+        <p class="mt-3 text-sky-600 text-lg">Host拦截 · 降低风控风险</p>
+    </div>
+
+    <div class="w-full max-w-xl flex flex-col gap-5">
+        <!-- 卡网 -->
+        <a href="https://shop.ymy9.com/shop/GJS6Q362" target="_blank" class="glass card-hover rounded-2xl p-6 block">
+            <div class="flex items-center gap-3 mb-3">
+                <i class="fa fa-wifi text-primary text-xl"></i>
+                <h2 class="text-xl font-semibold text-sky-800">卡网</h2>
+            </div>
+            <p class="text-sky-600 text-sm">点击卡片前往卡网</p>
+        </a>
+
+        <!-- 清理QQ群【粘贴官方群分享链接】 -->
+        <a href="https://qun.qq.com/universal-share/share?ac=1&authKey=HVeShKM9fRmZelN0WD4NM4erq6BrL89GFpdnNu7%2F0GeOBlIvDK5BrN1Jkglj2P0s&busi_data=eyJncm91cENvZGUiOiI2NzAzNTg2OTMiLCJ0b2tlbiI6Im1aTENkMXozc2wya0piZW90VXNRdDg1cXJVakc5NHc5ZllsTHZ6SW9tYWtnTGlEbjJvTXNtQWJFaS92L1NqZFoiLCJ1aW4iOiIyMjQwMjk1MzAxIn0%3D&data=9obwybnLpQ6IcmlIJwZ2KYLCBY0ynrkc4_RnLYf6IymPiePpb--7Dqw2PeOk-IA-ChYPMsQFTJfG1vJ0AT7FyQ&svctype=4&tempid=h5_group_info" target="_blank" class="glass card-hover rounded-2xl p-6 block">
+            <div class="flex items-center gap-3 mb-3">
+                <i class="fa fa-qq text-primary text-xl"></i>
+                <h2 class="text-xl font-semibold text-sky-800">清理QQ群</h2>
+            </div>
+            <p class="text-sky-600 text-sm">点击卡片加入清理交流群</p>
+        </a>
+
+        <!-- 拦截QQ群【粘贴官方群分享链接】 -->
+        <a href="https://qun.qq.com/universal-share/share?ac=1&authKey=EGr5QGGhOFlu7BXB%2B3O2ePX7zILS6%2BwIARtlSVDcYFi8N3QS2TIgeNaFRRFKDqxK&busi_data=eyJncm91cENvZGUiOiI4MDUwMjA1NTYiLCJ0b2tlbiI6IkxYR0hmQXNmTmdPNDduNEtydndmU0tBSnZTV29NakFzNW5mOTZ0MmV2NjVwaTMzZFpyRFc1OW5vTm5QenlkVksiLCJ1aW4iOiIyMjQwMjk1MzAxIn0%3D&data=oYZ41r7UylRM1VB1lq6FfFApv75kcyWjiLQN61_FdNdwN5m2BRsQgyRkETAURMXrmigRbPhNV4Lvwb6pSx_CHw&svctype=4&tempid=h5_group_info" target="_blank" class="glass card-hover rounded-2xl p-6 block">
+            <div class="flex items-center gap-3 mb-3">
+                <i class="fa fa-qq text-primary text-xl"></i>
+                <h2 class="text-xl font-semibold text-sky-800">拦截QQ群</h2>
+            </div>
+            <p class="text-sky-600 text-sm">点击卡片加入拦截交流群</p>
+        </a>
+
+        <!-- 失眠拦截卡网 -->
+        <a href="https://698.ab0j.cn/shop/失眠.com" target="_blank" class="glass card-hover rounded-2xl p-6 block">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex items-center gap-3 mb-3">
+                    <i class="fa fa-shield text-primary text-xl"></i>
+                    <h2 class="text-xl font-semibold text-sky-800">失眠拦截卡网</h2>
+                </div>
+                <p class="text-sky-600 text-sm">点击卡片访问拦截服务</p>
+            </div>
+        </a>
+    </div>
+
+    <!-- 底部备注 -->
+    <div class="mt-16 text-center text-sky-500 text-sm">
+        <p>点击卡片跳转对应服务 | 失眠拦截官方导航</p>
+    </div>
+</body>
+</html>
